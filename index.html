@@ -1,51 +1,39 @@
-Quotation Generator
-Sterix Global · Price list effective 15.06.2026
-🖨️ Print ⬇ Download PDF
-ℹ️
-Tap Download PDF, then in the dialog choose "Save as PDF" as the destination (instead of a printer). On iPhone/iPad: tap the share icon in the preview, then "Save to Files". The file saves straight to your device and can be shared on WhatsApp, email, or any chat app.
-￼
-Kh. No. 22, Palta, Deva Road, Barabanki, Uttar Pradesh, 225301 (India)
-Safe · Sterile · Sterix
-BILL TO
-Fill in client details below
-QUOTATION
-QUOTATION DATE
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sterix Global — Quotation Generator</title>
 
+<!-- PWA: installable app metadata -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B3C5D">
 
+<!-- iOS: makes "Add to Home Screen" launch full-screen like a real app -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sterix Quote">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 
-
-Select Product
-Qty
-Cartons
-Rate (₹)
-Disc %
-Net Rate (₹)
-Amount (₹)
-
-
-＋ Add product
-Subtotal
-₹0.00
-Discount
-− ₹0.00
-Net Value
-₹0.00
-GST @ 5%
-+ ₹0.00
-Total
-₹0.00
-Terms & Conditions
-• Prices are effective from 15 June 2026 and subject to change without prior notice.
-• GST is calculated on the discounted (net) value.
-• Payment Terms: 100% Advance (unless otherwise agreed in writing).
-• Delivery: Door Delivery / Ex-Works as mutually agreed. Orders subject to product availability.
-• Goods once sold will not be taken back except for verified manufacturing defects reported within 48 hours of receipt.
-• Quotation valid for days from the date of quotation (until ).
-• All disputes are subject to Lucknow jurisdiction.
-Safe · Sterile · Sterix
-
-Authorized Signatory
-Rates pulled from official price list effective 15.06.2026. Carton size = pack qty × packs/carton.
+<!-- Android / Chrome -->
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+  :root {
+    --navy: #0B3C5D;
+    --navy-dark: #0a3450;
+    --teal: #1B998B;
+    --sky: #4FC3F7;
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-800: #1e293b;
+  }
+  * { box-sizing: border-box; }
+  body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: var(--slate-50);
@@ -244,7 +232,7 @@ Rates pulled from official price list effective 15.06.2026. Carton size = pack q
     background: white;
     cursor: pointer;
   }
-  tbody input[type="number"] {
+  tbody input[type="text"] {
     width: 70px;
     text-align: right;
     border: 1px solid var(--slate-200);
@@ -323,7 +311,7 @@ Rates pulled from official price list effective 15.06.2026. Carton size = pack q
     .meta-input { display: none !important; }
     .meta-field { display: none !important; }
     .print-only { display: block !important; }
-    select, td input[type="number"] { display: none !important; }
+    select, td input[type="text"] { display: none !important; }
     .print-cell-text { display: inline !important; }
     .print-days-value { display: inline !important; }
   }
@@ -544,6 +532,21 @@ function computeRow(line) {
 }
 
 function render() {
+  // Preserve focus/cursor/scroll across re-render, since we rebuild input HTML below.
+  // Without this, every keystroke would steal focus and reset the cursor mid-typing.
+  const active = document.activeElement;
+  let restoreInfo = null;
+  if (active && active.tagName === "INPUT" && active.dataset && active.dataset.field) {
+    restoreInfo = {
+      idx: active.dataset.idx,
+      field: active.dataset.field,
+      context: active.dataset.context, // "card" or "table"
+      selStart: active.selectionStart,
+      selEnd: active.selectionEnd,
+      scrollY: window.scrollY
+    };
+  }
+
   // Cards (mobile)
   const cardsEl = document.getElementById("cardsContainer");
   cardsEl.innerHTML = lines.map((line, idx) => {
@@ -567,12 +570,11 @@ function render() {
         <div class="row-2">
           <div>
             <label class="field-label">Quantity (pcs)</label>
-            <input type="number" min="0" placeholder="0" value="${line.quantity}" oninput="updateLine(${idx}, 'quantity', this.value)">
-            ${cartonNote}
+            <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="${line.quantity}" data-idx="${idx}" data-field="quantity" data-context="card" oninput="updateLine(${idx}, 'quantity', this.value.replace(/[^0-9]/g,''))">
           </div>
           <div>
             <label class="field-label">Discount %</label>
-            <input type="number" min="0" max="100" placeholder="0" value="${line.discountPct}" oninput="updateLine(${idx}, 'discountPct', this.value)">
+            <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="${line.discountPct}" data-idx="${idx}" data-field="discountPct" data-context="card" oninput="updateLine(${idx}, 'discountPct', this.value.replace(/[^0-9]/g,''))">
           </div>
         </div>
         ${totalLine}
@@ -594,12 +596,12 @@ function render() {
           ${subMeta}
         </td>
         <td class="text-right">
-          <input type="number" min="0" placeholder="0" value="${line.quantity}" oninput="updateLine(${idx}, 'quantity', this.value)">
+          <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="${line.quantity}" data-idx="${idx}" data-field="quantity" data-context="table" oninput="updateLine(${idx}, 'quantity', this.value.replace(/[^0-9]/g,''))">
           <span class="print-cell-text">${line.quantity || 0}</span>
         </td>
         <td class="text-right">${(r.item && r.qty > 0) ? r.cartons.toFixed(2) : "—"}</td>
         <td class="text-right">${r.item ? fmt(r.baseRate) : "—"}</td>
-        <td class="text-right no-print-col"><input class="disc-input" type="number" min="0" max="100" placeholder="0" value="${line.discountPct}" oninput="updateLine(${idx}, 'discountPct', this.value)"></td>
+        <td class="text-right no-print-col"><input class="disc-input" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="${line.discountPct}" data-idx="${idx}" data-field="discountPct" data-context="table" oninput="updateLine(${idx}, 'discountPct', this.value.replace(/[^0-9]/g,''))"></td>
         <td class="text-right">${r.item ? fmt(r.discountedRate) : "—"}</td>
         <td class="text-right" style="font-weight:600;">${r.item ? fmt(r.amount) : "—"}</td>
         <td><button class="del-btn" onclick="removeLine(${idx})" aria-label="Remove">🗑</button></td>
@@ -625,6 +627,21 @@ function render() {
 
   updateBillTo();
   updateMeta();
+
+  // Restore focus, cursor position, and scroll so re-rendering doesn't interrupt typing.
+  if (restoreInfo) {
+    const selector = `input[data-idx="${restoreInfo.idx}"][data-field="${restoreInfo.field}"][data-context="${restoreInfo.context}"]`;
+    const toFocus = document.querySelector(selector);
+    if (toFocus) {
+      toFocus.focus();
+      try {
+        toFocus.setSelectionRange(restoreInfo.selStart, restoreInfo.selEnd);
+      } catch (e) {
+        // Some browsers disallow setSelectionRange on type="number"; harmless to skip.
+      }
+      window.scrollTo(0, restoreInfo.scrollY);
+    }
+  }
 }
 
 function updateBillTo() {
